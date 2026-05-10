@@ -1,0 +1,24 @@
+# Node
+node_modules/
+
+# TypeScript build output
+dist/
+
+# Environment files (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# SQLite database (rebuilt from migrations/seeds in real apps)
+data.db
+data.db-journal
+data.db-wal
+data.db-shm
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

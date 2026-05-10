@@ -1,0 +1,47 @@
+@host = http://localhost:2607
+
+### Health check
+GET {{host}}/
+
+### List all bookmarks
+GET {{host}}/bookmarks
+
+### Get one bookmark
+GET {{host}}/bookmarks/1
+
+### Create a bookmark
+POST {{host}}/bookmarks
+Content-Type: application/json
+
+{
+  "url": "https://github.com",
+  "title": "GitHub"
+}
+
+### Update a bookmark
+PUT {{host}}/bookmarks/1
+Content-Type: application/json
+
+{
+  "url": "https://nodejs.org",
+  "title": "Node.js (updated)"
+}
+
+### Delete a bookmark
+DELETE {{host}}/bookmarks/1
+
+### --- error cases ---
+
+### Missing url (400)
+POST {{host}}/bookmarks
+Content-Type: application/json
+
+{
+  "title": "no url here"
+}
+
+### Non-existent id (404)
+GET {{host}}/bookmarks/9999
+
+### Invalid id (400)
+GET {{host}}/bookmarks/abc
