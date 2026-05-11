@@ -16,7 +16,7 @@ const updateBookmarkSchema = createBookmarkSchema
 
 bookmarksRouter.get('/', (_req, res) => {
   const rows = db
-    .prepare('SELECT * FROM bookmarks ORDER BY created_at DESC')
+    .prepare('SELECT * FROM bookmarks ORDER BY created_at DESC, id DESC')
     .all() as Bookmark[]
   res.json(rows)
 })
