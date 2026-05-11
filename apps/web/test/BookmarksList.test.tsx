@@ -28,7 +28,7 @@ describe('BookmarksList', () => {
 
       render(<BookmarksList />)
 
-      expect(screen.getByText('Loading…')).toBeInTheDocument()
+      expect(screen.getByRole('status', { name: 'Loading bookmarks' })).toBeInTheDocument()
 
       expect(await screen.findByText('Node.js')).toBeInTheDocument()
       expect(screen.getByText('Express')).toBeInTheDocument()
@@ -71,6 +71,37 @@ describe('BookmarksList', () => {
          url: 'https://new.com',
          title: 'New One',
       })
+   })
+
+   it('shows a validation error when the URL is empty', async () => {
+      const user = userEvent.setup()
+
+      vi.mocked(api.fetchBookmarks).mockResolvedValue([])
+
+      render(<BookmarksList />)
+
+      await screen.findByText('No bookmarks yet.')
+
+      await user.click(screen.getByRole('button', { name: 'Add bookmark' }))
+
+      expect(await screen.findByText('URL is required')).toBeInTheDocument()
+      expect(api.createBookmark).not.toHaveBeenCalled()
+   })
+
+   it('shows a validation error when the URL is not a valid URL', async () => {
+      const user = userEvent.setup()
+
+      vi.mocked(api.fetchBookmarks).mockResolvedValue([])
+
+      render(<BookmarksList />)
+
+      await screen.findByText('No bookmarks yet.')
+
+      await user.type(screen.getByPlaceholderText('https://example.com'), 'not a url')
+      await user.click(screen.getByRole('button', { name: 'Add bookmark' }))
+
+      expect(await screen.findByText('Please enter a valid URL')).toBeInTheDocument()
+      expect(api.createBookmark).not.toHaveBeenCalled()
    })
 
    it('removes a bookmark when its delete button is clicked', async () => {
