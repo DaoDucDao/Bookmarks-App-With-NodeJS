@@ -4,6 +4,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().positive().default(2607),
   DATABASE_PATH: z.string().min(1).default('data.db'),
+  CORS_ORIGIN: z.string().min(1).default('http://localhost:5173'),
 })
 
 const parsed = envSchema.safeParse(process.env)

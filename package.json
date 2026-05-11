@@ -1,25 +1,13 @@
 {
-  "name": "bookmarks-api",
+  "name": "bookmarks",
+  "private": true,
   "version": "0.1.0",
-  "description": "Learning Node.js — a small REST API for saving bookmarks",
-  "type": "module",
-  "main": "dist/index.js",
+  "description": "Fullstack bookmarks app — Express API + React frontend",
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "tsx watch --env-file-if-exists=.env src/index.ts"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "better-sqlite3": "^12.9.0",
-    "express": "^5.2.1",
-    "zod": "^4.3.6"
-  },
-  "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/express": "^5.0.6",
-    "@types/node": "^25.6.0",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web"
   }
 }
