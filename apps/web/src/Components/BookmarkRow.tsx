@@ -1,185 +1,31 @@
-import React, { useState } from 'react'
-import { updateBookmark, deleteBookmark, type Bookmark } from '../api/bookmarks'
-import { validateBookmark, type FieldErrors } from '../validation/bookmark'
+import { useState } from 'react'
+import { type Bookmark } from '../api/bookmarks'
+import BookmarkRowDisplay from './BookmarkRow/BookmarkRowDisplay'
+import BookmarkRowEditForm from './BookmarkRow/BookmarkRowEditForm'
 
 type Props = {
    bookmark: Bookmark
    loadBookmarks: () => Promise<void>
 }
 
-const inputBaseClass =
-   'rounded-md border bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 disabled:bg-slate-100 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:disabled:bg-slate-800'
-
-const inputNormalBorderClass = 'border-slate-300 focus:border-blue-500 focus:ring-blue-500 dark:border-slate-700'
-
-const inputErrorBorderClass = 'border-red-500 focus:border-red-600 focus:ring-red-500 dark:border-red-500'
-
-const inputClass = (hasError: boolean) =>
-   `${inputBaseClass} ${hasError ? inputErrorBorderClass : inputNormalBorderClass}`
-
-const buttonClass =
-   'cursor-pointer rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800'
-
-const editButtonClass =
-   'cursor-pointer rounded-md border border-blue-300 px-3 py-1 text-sm text-blue-700 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-900/60 dark:text-blue-400 dark:hover:bg-blue-950/40'
-
 const BookmarkRow = ({ bookmark, loadBookmarks }: Props) => {
    const [editing, setEditing] = useState(false)
-   const [url, setUrl] = useState(bookmark.url)
-   const [title, setTitle] = useState(bookmark.title ?? '')
-   const [submitting, setSubmitting] = useState(false)
-   const [deleting, setDeleting] = useState(false)
-   const [submitError, setSubmitError] = useState<string | null>(null)
-   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
 
-   const startEdit = () => {
-      setUrl(bookmark.url)
-      setTitle(bookmark.title ?? '')
-      setSubmitError(null)
-      setFieldErrors({})
-      setEditing(true)
-   }
-
-   const cancelEdit = () => {
-      setEditing(false)
-      setSubmitError(null)
-      setFieldErrors({})
-   }
-
-   const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault()
-
-      const result = validateBookmark({ url, title })
-
-      if (!result.success) {
-         setFieldErrors(result.errors)
-
-         return
-      }
-
-      setFieldErrors({})
-      setSubmitting(true)
-      setSubmitError(null)
-
-      try {
-         await updateBookmark(bookmark.id, result.data)
-         setEditing(false)
-         await loadBookmarks()
-      } catch (error) {
-         console.log(error)
-         setSubmitError('Failed to save')
-      } finally {
-         setSubmitting(false)
-      }
-   }
-
-   const handleUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      setUrl(event.target.value)
-      if (fieldErrors.url) setFieldErrors((prev) => ({ ...prev, url: undefined }))
-   }
-
-   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      setTitle(event.target.value)
-      if (fieldErrors.title) setFieldErrors((prev) => ({ ...prev, title: undefined }))
-   }
-
-   const handleDelete = async () => {
-      setDeleting(true)
-
-      try {
-         await deleteBookmark(bookmark.id)
-         await loadBookmarks()
-      } catch (error) {
-         console.log(error)
-         setSubmitError('Failed to delete')
-         setDeleting(false)
-      }
-   }
-
-   if (editing) {
+   if (editing)
       return (
-         <li className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <form onSubmit={handleSave} noValidate className="grid gap-2">
-               <div className="grid gap-1">
-                  <input
-                     type="url"
-                     value={url}
-                     onChange={handleUrlChange}
-                     disabled={submitting}
-                     aria-invalid={Boolean(fieldErrors.url)}
-                     className={inputClass(Boolean(fieldErrors.url))}
-                  />
-
-                  {fieldErrors.url && <p className="text-xs text-red-600 dark:text-red-400">{fieldErrors.url}</p>}
-               </div>
-
-               <div className="grid gap-1">
-                  <input
-                     type="text"
-                     placeholder="Title (optional)"
-                     value={title}
-                     onChange={handleTitleChange}
-                     disabled={submitting}
-                     aria-invalid={Boolean(fieldErrors.title)}
-                     className={inputClass(Boolean(fieldErrors.title))}
-                  />
-
-                  {fieldErrors.title && <p className="text-xs text-red-600 dark:text-red-400">{fieldErrors.title}</p>}
-               </div>
-
-               <div className="flex gap-2">
-                  <button
-                     type="submit"
-                     disabled={submitting}
-                     className="cursor-pointer rounded-md bg-blue-600 px-3 py-1 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700"
-                  >
-                     {submitting ? 'Saving…' : 'Save'}
-                  </button>
-
-                  <button
-                     type="button"
-                     onClick={cancelEdit}
-                     disabled={submitting}
-                     className={buttonClass}
-                  >
-                     Cancel
-                  </button>
-               </div>
-
-               {submitError && <p className="m-0 text-sm text-red-600 dark:text-red-400">{submitError}</p>}
-            </form>
-         </li>
+         <BookmarkRowEditForm
+            bookmark={bookmark}
+            loadBookmarks={loadBookmarks}
+            setEditing={setEditing}
+         />
       )
-   }
 
    return (
-      <li className="group flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-         <a
-            href={bookmark.url}
-            target="_blank"
-            rel="noreferrer"
-            className="min-w-0 truncate text-sm font-medium text-blue-700 hover:underline dark:text-blue-400"
-         >
-            {bookmark.title || bookmark.url}
-         </a>
-
-         <div className="flex shrink-0 gap-2">
-            <button type="button" onClick={startEdit} disabled={deleting} className={editButtonClass}>
-               Edit
-            </button>
-
-            <button
-               type="button"
-               onClick={handleDelete}
-               disabled={deleting}
-               className="cursor-pointer rounded-md border border-red-300 px-3 py-1 text-sm text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/40"
-            >
-               {deleting ? 'Deleting…' : 'Delete'}
-            </button>
-         </div>
-
-         {submitError && <p className="m-0 text-sm text-red-600 dark:text-red-400">{submitError}</p>}
-      </li>
+      <BookmarkRowDisplay
+         bookmark={bookmark}
+         loadBookmarks={loadBookmarks}
+         setEditing={setEditing}
+      />
    )
 }
 

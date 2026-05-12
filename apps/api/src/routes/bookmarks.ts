@@ -14,6 +14,10 @@ const createBookmarkSchema = z.object({
 
 const updateBookmarkSchema = createBookmarkSchema;
 
+const favouriteBodySchema = z.object({
+   is_favorite: z.union([z.literal(0), z.literal(1)]),
+});
+
 const querySchema = z.object({
    title: z.string().min(1).max(200).optional(),
    page: z.coerce.number().int().positive().default(1),
@@ -47,6 +51,19 @@ bookmarksRouter.get('/filter', (req, res) => {
       limit,
       total,
    });
+});
+
+bookmarksRouter.patch('/toggle-favourite/:id', (req, res) => {
+   const id = idParamSchema.parse(req.params.id);
+   const { is_favorite } = favouriteBodySchema.parse(req.body);
+
+   const updated = db
+      .prepare('UPDATE bookmarks SET is_favorite = ? WHERE id = ? RETURNING *')
+      .get(is_favorite, id) as Bookmark | undefined;
+
+   if (!updated) throw new HttpError(404, 'Bookmark not found!');
+
+   res.json(updated);
 });
 
 bookmarksRouter.get('/:id', (req, res) => {

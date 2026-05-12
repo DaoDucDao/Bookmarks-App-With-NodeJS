@@ -2,6 +2,7 @@ type Bookmark = {
    id: number;
    url: string;
    title: string | null;
+   is_favorite: number;
    created_at: string;
 };
 
@@ -63,6 +64,18 @@ const deleteBookmark = async (id: number): Promise<void> => {
    if (!res.ok) throw new Error(`request failed with status ${res.status}`);
 };
 
+const setFavourite = async (id: number, is_favorite: 0 | 1): Promise<Bookmark> => {
+   const res = await fetch(`${API_URL}/bookmarks/toggle-favourite/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_favorite }),
+   });
+
+   if (!res.ok) throw new Error(`request failed with status ${res.status}`);
+
+   return res.json();
+};
+
 const filterBookmark = async (
    params: FilterBookmarkParams = {},
 ): Promise<FilterBookmarksResponse> => {
@@ -79,5 +92,5 @@ const filterBookmark = async (
    return res.json();
 };
 
-export { fetchBookmarks, createBookmark, updateBookmark, deleteBookmark, filterBookmark };
+export { fetchBookmarks, createBookmark, updateBookmark, deleteBookmark, filterBookmark, setFavourite };
 export type { Bookmark, BookmarkInput };
