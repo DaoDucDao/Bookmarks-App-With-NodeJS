@@ -1,8 +1,14 @@
+type Tag = {
+   id: number;
+   name: string;
+};
+
 type Bookmark = {
    id: number;
    url: string;
    title: string | null;
    is_favorite: number;
+   tags: Tag[];
    created_at: string;
 };
 
@@ -93,4 +99,4 @@ const filterBookmark = async (
 };
 
 export { fetchBookmarks, createBookmark, updateBookmark, deleteBookmark, filterBookmark, setFavourite };
-export type { Bookmark, BookmarkInput };
+export type { Bookmark, BookmarkInput, Tag };

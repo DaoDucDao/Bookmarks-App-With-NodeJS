@@ -12,6 +12,7 @@ const makeBookmark = (overrides: Partial<Bookmark> = {}): Bookmark => ({
    url: 'https://example.com',
    title: 'Example',
    is_favorite: 0,
+   tags: [],
    created_at: '2026-01-01T00:00:00Z',
    ...overrides,
 })
