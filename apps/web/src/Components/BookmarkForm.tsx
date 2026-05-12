@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
-import { createBookmark, type Bookmark } from '../api/bookmarks'
+import { createBookmark } from '../api/bookmarks'
 import { validateBookmark, type FieldErrors } from '../validation/bookmark'
 
 type Props = {
-   addBookmark: (bookmark: Bookmark) => void
+   loadBookmarks: () => Promise<void>
 }
 
 const inputBaseClass =
@@ -16,7 +16,7 @@ const inputErrorBorderClass = 'border-red-500 focus:border-red-600 focus:ring-re
 const inputClass = (hasError: boolean) =>
    `${inputBaseClass} ${hasError ? inputErrorBorderClass : inputNormalBorderClass}`
 
-const BookmarkForm = ({ addBookmark }: Props) => {
+const BookmarkForm = ({ loadBookmarks }: Props) => {
    const [url, setUrl] = useState('')
    const [title, setTitle] = useState('')
    const [submitting, setSubmitting] = useState(false)
@@ -39,10 +39,10 @@ const BookmarkForm = ({ addBookmark }: Props) => {
       setSubmitError(null)
 
       try {
-         const created = await createBookmark(result.data)
-         addBookmark(created)
+         await createBookmark(result.data)
          setUrl('')
          setTitle('')
+         await loadBookmarks()
       } catch (error) {
          console.log(error)
          setSubmitError('Failed to create bookmark')

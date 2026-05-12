@@ -4,8 +4,7 @@ import { validateBookmark, type FieldErrors } from '../validation/bookmark'
 
 type Props = {
    bookmark: Bookmark
-   replaceBookmark: (bookmark: Bookmark) => void
-   removeBookmark: (id: number) => void
+   loadBookmarks: () => Promise<void>
 }
 
 const inputBaseClass =
@@ -24,7 +23,7 @@ const buttonClass =
 const editButtonClass =
    'cursor-pointer rounded-md border border-blue-300 px-3 py-1 text-sm text-blue-700 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-900/60 dark:text-blue-400 dark:hover:bg-blue-950/40'
 
-const BookmarkRow = ({ bookmark, replaceBookmark, removeBookmark }: Props) => {
+const BookmarkRow = ({ bookmark, loadBookmarks }: Props) => {
    const [editing, setEditing] = useState(false)
    const [url, setUrl] = useState(bookmark.url)
    const [title, setTitle] = useState(bookmark.title ?? '')
@@ -63,9 +62,9 @@ const BookmarkRow = ({ bookmark, replaceBookmark, removeBookmark }: Props) => {
       setSubmitError(null)
 
       try {
-         const updated = await updateBookmark(bookmark.id, result.data)
-         replaceBookmark(updated)
+         await updateBookmark(bookmark.id, result.data)
          setEditing(false)
+         await loadBookmarks()
       } catch (error) {
          console.log(error)
          setSubmitError('Failed to save')
@@ -89,7 +88,7 @@ const BookmarkRow = ({ bookmark, replaceBookmark, removeBookmark }: Props) => {
 
       try {
          await deleteBookmark(bookmark.id)
-         removeBookmark(bookmark.id)
+         await loadBookmarks()
       } catch (error) {
          console.log(error)
          setSubmitError('Failed to delete')

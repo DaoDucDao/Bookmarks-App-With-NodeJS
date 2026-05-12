@@ -15,16 +15,25 @@ const makeBookmark = (overrides: Partial<Bookmark> = {}): Bookmark => ({
    ...overrides,
 })
 
+const makeResponse = (items: Bookmark[], total?: number) => ({
+   items,
+   total: total ?? items.length,
+   page: 1,
+   limit: 10,
+})
+
 beforeEach(() => {
    vi.resetAllMocks()
 })
 
 describe('BookmarksList', () => {
    it('shows loading initially, then renders bookmarks from the API', async () => {
-      vi.mocked(api.fetchBookmarks).mockResolvedValue([
-         makeBookmark({ id: 1, title: 'Node.js' }),
-         makeBookmark({ id: 2, title: 'Express' }),
-      ])
+      vi.mocked(api.filterBookmark).mockResolvedValue(
+         makeResponse([
+            makeBookmark({ id: 1, title: 'Node.js' }),
+            makeBookmark({ id: 2, title: 'Express' }),
+         ]),
+      )
 
       render(<BookmarksList />)
 
@@ -35,7 +44,7 @@ describe('BookmarksList', () => {
    })
 
    it('shows the empty state when no bookmarks exist', async () => {
-      vi.mocked(api.fetchBookmarks).mockResolvedValue([])
+      vi.mocked(api.filterBookmark).mockResolvedValue(makeResponse([]))
 
       render(<BookmarksList />)
 
@@ -43,7 +52,7 @@ describe('BookmarksList', () => {
    })
 
    it('shows an error message when fetching fails', async () => {
-      vi.mocked(api.fetchBookmarks).mockRejectedValue(new Error('boom'))
+      vi.mocked(api.filterBookmark).mockRejectedValue(new Error('boom'))
 
       render(<BookmarksList />)
 
@@ -53,7 +62,11 @@ describe('BookmarksList', () => {
    it('adds a new bookmark to the list after submitting the form', async () => {
       const user = userEvent.setup()
 
-      vi.mocked(api.fetchBookmarks).mockResolvedValue([])
+      vi.mocked(api.filterBookmark)
+         .mockResolvedValueOnce(makeResponse([]))
+         .mockResolvedValueOnce(
+            makeResponse([makeBookmark({ id: 42, url: 'https://new.com', title: 'New One' })]),
+         )
       vi.mocked(api.createBookmark).mockResolvedValue(
          makeBookmark({ id: 42, url: 'https://new.com', title: 'New One' }),
       )
@@ -76,7 +89,7 @@ describe('BookmarksList', () => {
    it('shows a validation error when the URL is empty', async () => {
       const user = userEvent.setup()
 
-      vi.mocked(api.fetchBookmarks).mockResolvedValue([])
+      vi.mocked(api.filterBookmark).mockResolvedValue(makeResponse([]))
 
       render(<BookmarksList />)
 
@@ -91,7 +104,7 @@ describe('BookmarksList', () => {
    it('shows a validation error when the URL is not a valid URL', async () => {
       const user = userEvent.setup()
 
-      vi.mocked(api.fetchBookmarks).mockResolvedValue([])
+      vi.mocked(api.filterBookmark).mockResolvedValue(makeResponse([]))
 
       render(<BookmarksList />)
 
@@ -107,9 +120,9 @@ describe('BookmarksList', () => {
    it('removes a bookmark when its delete button is clicked', async () => {
       const user = userEvent.setup()
 
-      vi.mocked(api.fetchBookmarks).mockResolvedValue([
-         makeBookmark({ id: 7, title: 'Doomed' }),
-      ])
+      vi.mocked(api.filterBookmark)
+         .mockResolvedValueOnce(makeResponse([makeBookmark({ id: 7, title: 'Doomed' })]))
+         .mockResolvedValueOnce(makeResponse([]))
       vi.mocked(api.deleteBookmark).mockResolvedValue(undefined)
 
       render(<BookmarksList />)
