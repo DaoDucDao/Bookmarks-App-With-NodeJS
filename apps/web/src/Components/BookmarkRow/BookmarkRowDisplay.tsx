@@ -16,6 +16,9 @@ const editButtonClass =
 const deleteButtonClass =
    'cursor-pointer rounded-md border border-red-300 px-3 py-1 text-sm text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/40'
 
+const tagChipClass =
+   'rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+
 const rowBaseClass =
    'group flex items-center justify-between gap-3 rounded-lg border p-3 shadow-sm transition-shadow hover:shadow-md'
 
@@ -71,6 +74,16 @@ const BookmarkRowDisplay = ({ bookmark, loadBookmarks, setEditing }: Props) => {
          >
             {bookmark.title || bookmark.url}
          </a>
+
+         {bookmark.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+               {bookmark.tags.map((tag) => (
+                  <span key={tag.id} className={tagChipClass}>
+                     {tag.name}
+                  </span>
+               ))}
+            </div>
+         )}
 
          <div className="flex shrink-0 gap-2">
             <button

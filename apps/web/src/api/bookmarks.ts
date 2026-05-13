@@ -82,6 +82,24 @@ const setFavourite = async (id: number, is_favorite: 0 | 1): Promise<Bookmark> =
    return res.json();
 };
 
+const addTagToBookmark = async (id: number, name: string): Promise<Bookmark> => {
+   const res = await fetch(`${API_URL}/bookmarks/${id}/tags`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+   });
+
+   if (!res.ok) throw new Error(`request failed with status ${res.status}`);
+
+   return res.json();
+};
+
+const removeTagFromBookmark = async (id: number, tagId: number): Promise<void> => {
+   const res = await fetch(`${API_URL}/bookmarks/${id}/tags/${tagId}`, { method: 'DELETE' });
+
+   if (!res.ok) throw new Error(`request failed with status ${res.status}`);
+};
+
 const filterBookmark = async (
    params: FilterBookmarkParams = {},
 ): Promise<FilterBookmarksResponse> => {
@@ -98,5 +116,14 @@ const filterBookmark = async (
    return res.json();
 };
 
-export { fetchBookmarks, createBookmark, updateBookmark, deleteBookmark, filterBookmark, setFavourite };
+export {
+   fetchBookmarks,
+   createBookmark,
+   updateBookmark,
+   deleteBookmark,
+   filterBookmark,
+   setFavourite,
+   addTagToBookmark,
+   removeTagFromBookmark,
+};
 export type { Bookmark, BookmarkInput, Tag };
