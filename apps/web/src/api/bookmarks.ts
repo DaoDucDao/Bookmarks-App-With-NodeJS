@@ -28,6 +28,7 @@ type FilterBookmarkParams = {
    title?: string;
    page?: number;
    limit?: number;
+   tag?: string
 };
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -106,6 +107,7 @@ const filterBookmark = async (
    const url = new URL(`${API_URL}/bookmarks/filter`);
 
    if (params.title) url.searchParams.set('title', params.title);
+   if (params.tag) url.searchParams.set('tag', params.tag);
    if (params.page) url.searchParams.set('page', String(params.page));
    if (params.limit) url.searchParams.set('limit', String(params.limit));
 

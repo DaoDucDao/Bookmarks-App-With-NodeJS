@@ -1,15 +1,15 @@
-import { useState } from 'react'
-import { type Bookmark } from '../api/bookmarks'
-import BookmarkRowDisplay from './BookmarkRow/BookmarkRowDisplay'
-import BookmarkRowEditForm from './BookmarkRow/BookmarkRowEditForm'
+import { useState } from 'react';
+import { type Bookmark } from '../api/bookmarks';
+import BookmarkRowDisplay from './BookmarkRow/BookmarkRowDisplay';
+import BookmarkRowEditForm from './BookmarkRow/BookmarkRowEditForm';
 
 type Props = {
-   bookmark: Bookmark
-   loadBookmarks: () => Promise<void>
-}
+   bookmark: Bookmark;
+   loadBookmarks: () => Promise<void>;
+};
 
 const BookmarkRow = ({ bookmark, loadBookmarks }: Props) => {
-   const [editing, setEditing] = useState(false)
+   const [editing, setEditing] = useState(false);
 
    if (editing)
       return (
@@ -18,7 +18,7 @@ const BookmarkRow = ({ bookmark, loadBookmarks }: Props) => {
             loadBookmarks={loadBookmarks}
             setEditing={setEditing}
          />
-      )
+      );
 
    return (
       <BookmarkRowDisplay
@@ -26,7 +26,7 @@ const BookmarkRow = ({ bookmark, loadBookmarks }: Props) => {
          loadBookmarks={loadBookmarks}
          setEditing={setEditing}
       />
-   )
-}
+   );
+};
 
-export default BookmarkRow
+export default BookmarkRow;

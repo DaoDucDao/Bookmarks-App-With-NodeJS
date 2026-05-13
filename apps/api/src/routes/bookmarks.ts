@@ -20,6 +20,7 @@ const favouriteBodySchema = z.object({
 
 const querySchema = z.object({
    title: z.string().min(1).max(200).optional(),
+   tag: z.string().min(1).max(50).optional(),
    page: z.coerce.number().int().positive().default(1),
    limit: z.coerce.number().int().positive().max(100).default(10),
 });
@@ -37,13 +38,25 @@ bookmarksRouter.get('/', (_req, res) => {
 });
 
 bookmarksRouter.get('/filter', (req, res) => {
-   const { title, limit, page } = querySchema.parse(req.query);
+   const { title, limit, page, tag } = querySchema.parse(req.query);
 
    const findPattern = title ? `%${title}%` : '%';
+   const tagFilter = tag
+      ? `AND EXISTS (
+            SELECT 1 FROM bookmark_tags bt2
+            JOIN tags t2 ON t2.id = bt2.tag_id
+            WHERE bt2.bookmark_id = b.id AND t2.name = ? COLLATE NOCASE
+         )`
+      : '';
+
+   const filterParams = tag
+      ? [findPattern, tag, limit, (page - 1) * limit]
+      : [findPattern, limit, (page - 1) * limit];
+
    const result = db
       .prepare(
          `
-         SELECT 
+         SELECT
             b.*,
             COALESCE(
                JSON_GROUP_ARRAY(JSON_OBJECT('id', t.id, 'name', t.name))
@@ -54,18 +67,21 @@ bookmarksRouter.get('/filter', (req, res) => {
          LEFT JOIN bookmark_tags bt ON bt.bookmark_id = b.id
          LEFT JOIN tags t ON t.id = bt.tag_id
          WHERE b.title LIKE ? COLLATE NOCASE
-         GROUP BY b.id 
+         ${tagFilter}
+         GROUP BY b.id
          ORDER BY b.created_at DESC, b.id DESC
          LIMIT ? OFFSET ?
       `,
       )
-      .all(findPattern, limit, (page - 1) * limit) as Array<
-      Omit<Bookmark, 'tags'> & { tags: string }
-   >;
+      .all(...filterParams) as Array<Omit<Bookmark, 'tags'> & { tags: string }>;
 
    const { total } = db
-      .prepare('SELECT COUNT(*) AS total FROM bookmarks WHERE title LIKE ? COLLATE NOCASE')
-      .get(findPattern) as { total: number };
+      .prepare(
+         `SELECT COUNT(*) AS total FROM bookmarks b
+         WHERE b.title LIKE ? COLLATE NOCASE
+         ${tagFilter}`,
+      )
+      .get(...(tag ? [findPattern, tag] : [findPattern])) as { total: number };
 
    res.json({
       items: result.map((item) => ({ ...item, tags: JSON.parse(item.tags) })),
