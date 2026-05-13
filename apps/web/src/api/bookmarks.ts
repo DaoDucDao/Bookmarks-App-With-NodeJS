@@ -28,13 +28,21 @@ type FilterBookmarkParams = {
    title?: string;
    page?: number;
    limit?: number;
-   tag?: string
+   tags?: string[];
 };
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:2607';
 
 const fetchBookmarks = async (): Promise<Bookmark[]> => {
    const res = await fetch(`${API_URL}/bookmarks`);
+
+   if (!res.ok) throw new Error(`request failed with status ${res.status}`);
+
+   return res.json();
+};
+
+const fetchTags = async (): Promise<Tag[]> => {
+   const res = await fetch(`${API_URL}/bookmarks/tags`);
 
    if (!res.ok) throw new Error(`request failed with status ${res.status}`);
 
@@ -107,7 +115,9 @@ const filterBookmark = async (
    const url = new URL(`${API_URL}/bookmarks/filter`);
 
    if (params.title) url.searchParams.set('title', params.title);
-   if (params.tag) url.searchParams.set('tag', params.tag);
+   if (params.tags) {
+      for (const t of params.tags) url.searchParams.append('tag', t);
+   }
    if (params.page) url.searchParams.set('page', String(params.page));
    if (params.limit) url.searchParams.set('limit', String(params.limit));
 
@@ -120,6 +130,7 @@ const filterBookmark = async (
 
 export {
    fetchBookmarks,
+   fetchTags,
    createBookmark,
    updateBookmark,
    deleteBookmark,

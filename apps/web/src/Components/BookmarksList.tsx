@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { filterBookmark, type Bookmark } from '../api/bookmarks';
+import { fetchTags, filterBookmark, type Bookmark, type Tag } from '../api/bookmarks';
 import BookmarkForm from './BookmarkForm';
 import BookmarkRow from './BookmarkRow';
 import SearchBar from './SearchBar';
@@ -15,7 +15,8 @@ const BookmarksList = () => {
 
    const [search, setSearch] = useState('');
    const [page, setPage] = useState(1);
-   const [activeTag, setActiveTag] = useState('');
+   const [activeTags, setActiveTags] = useState<string[]>([]);
+   const [tags, setTags] = useState<Tag[]>([]);
 
    const loadBookmarks = async () => {
       try {
@@ -23,7 +24,7 @@ const BookmarksList = () => {
             title: search,
             page,
             limit: PAGE_SIZE,
-            tag: activeTag || undefined,
+            tags: activeTags.length > 0 ? activeTags : undefined,
          });
          setBookmarks(data.items);
          setTotal(data.total);
@@ -38,10 +39,22 @@ const BookmarksList = () => {
 
    useEffect(() => {
       loadBookmarks();
-   }, [search, page, activeTag]);
+   }, [search, page, activeTags]);
+
+   useEffect(() => {
+      fetchTags()
+         .then(setTags)
+         .catch((err) => console.log('Failed to load tags', err));
+   }, []);
 
    const handleSearchChange = (value: string) => {
       setSearch(value);
+      setPage(1);
+   };
+
+   const handleTagSelectionChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const selected = Array.from(event.target.selectedOptions).map((option) => option.value);
+      setActiveTags(selected);
       setPage(1);
    };
 
@@ -108,16 +121,47 @@ const BookmarksList = () => {
 
          <SearchBar value={search} setValue={handleSearchChange} disabled={loading} />
 
-         {activeTag && (
-            <div className="flex items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm dark:bg-slate-800">
-               <span className="text-slate-600 dark:text-slate-400">Filtering by tag:</span>
-               <span className="font-medium text-slate-900 dark:text-slate-100">{activeTag}</span>
+         {tags.length > 0 && (
+            <label className="flex flex-col gap-1 text-sm">
+               <span className="text-slate-600 dark:text-slate-400">
+                  Filter by tags (Ctrl/Cmd-click for multiple)
+               </span>
+               <select
+                  multiple
+                  value={activeTags}
+                  onChange={handleTagSelectionChange}
+                  size={Math.min(tags.length, 6)}
+                  className="rounded-md border border-slate-300 bg-white px-2 py-1 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+               >
+                  {tags.map((tag) => (
+                     <option key={tag.id} value={tag.name}>
+                        {tag.name}
+                     </option>
+                  ))}
+               </select>
+            </label>
+         )}
+
+         {activeTags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm dark:bg-slate-800">
+               <span className="text-slate-600 dark:text-slate-400">Filtering by:</span>
+               {activeTags.map((tag) => (
+                  <span
+                     key={tag}
+                     className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-800 dark:bg-slate-700 dark:text-slate-100"
+                  >
+                     {tag}
+                  </span>
+               ))}
                <button
                   type="button"
-                  onClick={() => setActiveTag('')}
+                  onClick={() => {
+                     setActiveTags([]);
+                     setPage(1);
+                  }}
                   className="ml-auto cursor-pointer text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                >
-                  ×
+                  Clear
                </button>
             </div>
          )}

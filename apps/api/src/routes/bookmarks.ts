@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { db, type Bookmark } from '../db.js';
+import { db, type Tag, type Bookmark } from '../db.js';
 import { HttpError } from '../lib/errors.js';
 
 export const bookmarksRouter = Router();
@@ -20,7 +20,10 @@ const favouriteBodySchema = z.object({
 
 const querySchema = z.object({
    title: z.string().min(1).max(200).optional(),
-   tag: z.string().min(1).max(50).optional(),
+   tag: z.preprocess(
+      (v) => (v == null ? undefined : Array.isArray(v) ? v : [v]),
+      z.array(z.string().trim().min(1).max(50)).max(20).optional(),
+   ),
    page: z.coerce.number().int().positive().default(1),
    limit: z.coerce.number().int().positive().max(100).default(10),
 });
@@ -37,21 +40,31 @@ bookmarksRouter.get('/', (_req, res) => {
    res.json(rows);
 });
 
+bookmarksRouter.get('/tags', (_req, res) => {
+   const tags = db.prepare('SELECT * FROM tags ORDER BY id DESC').all() as Tag[];
+
+   res.json(tags);
+});
+
 bookmarksRouter.get('/filter', (req, res) => {
    const { title, limit, page, tag } = querySchema.parse(req.query);
 
    const findPattern = title ? `%${title}%` : '%';
-   const tagFilter = tag
-      ? `AND EXISTS (
-            SELECT 1 FROM bookmark_tags bt2
-            JOIN tags t2 ON t2.id = bt2.tag_id
-            WHERE bt2.bookmark_id = b.id AND t2.name = ? COLLATE NOCASE
-         )`
-      : '';
+   const tags = tag ?? [];
+   const tagFilter =
+      tags.length > 0
+         ? `AND b.id IN (
+               SELECT bt2.bookmark_id
+               FROM bookmark_tags bt2
+               JOIN tags t2 ON t2.id = bt2.tag_id
+               WHERE t2.name COLLATE NOCASE IN (${tags.map(() => '?').join(', ')})
+               GROUP BY bt2.bookmark_id
+               HAVING COUNT(DISTINCT t2.id) = ?
+            )`
+         : '';
 
-   const filterParams = tag
-      ? [findPattern, tag, limit, (page - 1) * limit]
-      : [findPattern, limit, (page - 1) * limit];
+   const tagFilterParams = tags.length > 0 ? [...tags, tags.length] : [];
+   const filterParams = [findPattern, ...tagFilterParams, limit, (page - 1) * limit];
 
    const result = db
       .prepare(
@@ -81,7 +94,7 @@ bookmarksRouter.get('/filter', (req, res) => {
          WHERE b.title LIKE ? COLLATE NOCASE
          ${tagFilter}`,
       )
-      .get(...(tag ? [findPattern, tag] : [findPattern])) as { total: number };
+      .get(findPattern, ...tagFilterParams) as { total: number };
 
    res.json({
       items: result.map((item) => ({ ...item, tags: JSON.parse(item.tags) })),
