@@ -10,6 +10,7 @@ import { validateBookmark, type FieldErrors } from '../../validation/bookmark'
 type Props = {
    bookmark: Bookmark
    loadBookmarks: () => Promise<void>
+   loadTags: () => Promise<void>
    setEditing: (editing: boolean) => void
 }
 
@@ -35,7 +36,7 @@ const tagRemoveButtonClass =
 const addTagButtonClass =
    'cursor-pointer rounded-md border border-blue-300 px-2 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-900/60 dark:text-blue-400 dark:hover:bg-blue-950/40'
 
-const BookmarkRowEditForm = ({ bookmark, loadBookmarks, setEditing }: Props) => {
+const BookmarkRowEditForm = ({ bookmark, loadBookmarks, loadTags, setEditing }: Props) => {
    const [url, setUrl] = useState(bookmark.url)
    const [title, setTitle] = useState(bookmark.title ?? '')
    const [submitting, setSubmitting] = useState(false)
@@ -95,7 +96,7 @@ const BookmarkRowEditForm = ({ bookmark, loadBookmarks, setEditing }: Props) => 
       try {
          await addTagToBookmark(bookmark.id, trimmed)
          setTagInput('')
-         await loadBookmarks()
+         await Promise.allSettled([loadBookmarks(), loadTags()])
       } catch (error) {
          console.log(error)
          setTagError('Failed to add tag')

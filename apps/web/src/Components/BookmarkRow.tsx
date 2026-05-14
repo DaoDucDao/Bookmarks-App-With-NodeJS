@@ -6,9 +6,10 @@ import BookmarkRowEditForm from './BookmarkRow/BookmarkRowEditForm';
 type Props = {
    bookmark: Bookmark;
    loadBookmarks: () => Promise<void>;
+   loadTags: () => Promise<void>;
 };
 
-const BookmarkRow = ({ bookmark, loadBookmarks }: Props) => {
+const BookmarkRow = ({ bookmark, loadBookmarks, loadTags }: Props) => {
    const [editing, setEditing] = useState(false);
 
    if (editing)
@@ -16,6 +17,7 @@ const BookmarkRow = ({ bookmark, loadBookmarks }: Props) => {
          <BookmarkRowEditForm
             bookmark={bookmark}
             loadBookmarks={loadBookmarks}
+            loadTags={loadTags}
             setEditing={setEditing}
          />
       );

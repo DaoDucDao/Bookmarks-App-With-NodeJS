@@ -41,10 +41,17 @@ const BookmarksList = () => {
       loadBookmarks();
    }, [search, page, activeTags]);
 
+   const loadTags = async () => {
+      try {
+         const data = await fetchTags();
+         setTags(data);
+      } catch (error) {
+         console.log('Failed to load tags', error);
+      }
+   };
+
    useEffect(() => {
-      fetchTags()
-         .then(setTags)
-         .catch((err) => console.log('Failed to load tags', err));
+      loadTags();
    }, []);
 
    const handleSearchChange = (value: string) => {
@@ -109,6 +116,7 @@ const BookmarksList = () => {
                   key={bookmark.id}
                   bookmark={bookmark}
                   loadBookmarks={loadBookmarks}
+                  loadTags={loadTags}
                />
             ))}
          </ul>
