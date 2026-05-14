@@ -33,14 +33,6 @@ type FilterBookmarkParams = {
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:2607';
 
-const fetchBookmarks = async (): Promise<Bookmark[]> => {
-   const res = await fetch(`${API_URL}/bookmarks`);
-
-   if (!res.ok) throw new Error(`request failed with status ${res.status}`);
-
-   return res.json();
-};
-
 const fetchTags = async (): Promise<Tag[]> => {
    const res = await fetch(`${API_URL}/bookmarks/tags`);
 
@@ -129,7 +121,6 @@ const filterBookmark = async (
 };
 
 export {
-   fetchBookmarks,
    fetchTags,
    createBookmark,
    updateBookmark,

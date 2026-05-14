@@ -11,5 +11,8 @@
     "dev:web": "npm run dev --workspace=apps/web",
     "test:api": "npm run test --workspace=apps/api",
     "test:web": "npm run test --workspace=apps/web"
+  },
+  "dependencies": {
+    "express-rate-limit": "^8.5.1"
   }
 }

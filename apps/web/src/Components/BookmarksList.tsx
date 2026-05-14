@@ -44,7 +44,7 @@ const BookmarksList = () => {
    const loadTags = async () => {
       try {
          const data = await fetchTags();
-         setTags(data);
+         setTags(data ?? []);
       } catch (error) {
          console.log('Failed to load tags', error);
       }

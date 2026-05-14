@@ -77,14 +77,13 @@ Three parallel tracks. Each step builds on the previous one and folds in one new
 - [x] **Step 10** — Env config validated by Zod (`config.ts`), fail-fast on bad env
 - [x] **Step 11** — Vitest + Supertest test harness (`app.ts` extracted from `index.ts` for testability, in-memory SQLite for tests)
 - [x] **Step 12** — Structured logging with `pino` (+ `pino-http`)
-- [ ] **Step 13** — Request IDs / correlation IDs threaded through logs ← **next**
-- [ ] **Step 14** — Security headers (`helmet`) + body-size limit
-- [ ] **Step 15** — Rate limiting (`express-rate-limit`)
-- [ ] **Step 16** — Health & readiness endpoints (`/healthz`, `/readyz`)
-- [ ] **Step 17** — Graceful shutdown (SIGTERM, drain connections, close DB)
-- [ ] **Step 18** — Database migrations (replace `CREATE TABLE IF NOT EXISTS` bootstrap)
-- [ ] **Step 19** — Pagination + filtering on list endpoints
-- [ ] **Step 20** — Authentication (sessions or JWT) + per-user bookmarks
+- [x] **Step 13** — Request IDs / correlation IDs threaded through logs
+- [x] **Step 14** — Security headers (`helmet`) + body-size limit
+- [x] **Step 15** — Rate limiting (`express-rate-limit`)
+- [x] **Step 16** — Health & readiness endpoints (`/healthz`, `/readyz`)
+- [x] **Step 17** — Graceful shutdown (SIGTERM, drain connections, close DB)
+- [x] **Step 18** — Database migrations (replace `CREATE TABLE IF NOT EXISTS` bootstrap)
+- [ ] **Step 19** — Authentication (sessions or JWT) + per-user bookmarks ← **next**
 
 ### Frontend track
 

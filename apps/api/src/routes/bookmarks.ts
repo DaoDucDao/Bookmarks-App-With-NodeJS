@@ -32,14 +32,6 @@ const tagSchema = z.object({
    name: z.string().trim().min(1).max(50),
 });
 
-bookmarksRouter.get('/', (_req, res) => {
-   const rows = db
-      .prepare('SELECT * FROM bookmarks ORDER BY created_at DESC, id DESC')
-      .all() as Bookmark[];
-
-   res.json(rows);
-});
-
 bookmarksRouter.get('/tags', (_req, res) => {
    const tags = db.prepare('SELECT * FROM tags ORDER BY id DESC').all() as Tag[];
 

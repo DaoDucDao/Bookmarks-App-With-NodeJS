@@ -5,6 +5,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(2607),
   DATABASE_PATH: z.string().min(1).default('data.db'),
   CORS_ORIGIN: z.string().min(1).default('http://localhost:5173'),
+  SESSION_SECRET: z.string().min(16).default('dev-only-secret-change-me-please'),
 })
 
 const parsed = envSchema.safeParse(process.env)

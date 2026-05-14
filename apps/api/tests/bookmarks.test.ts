@@ -17,27 +17,6 @@ const seedTag = (name: string) =>
 const linkTag = (bookmarkId: number, tagId: number) =>
    db.prepare('INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)').run(bookmarkId, tagId)
 
-describe('GET /bookmarks', () => {
-   it('returns an empty array when there are no bookmarks', async () => {
-      const res = await request(app).get('/bookmarks')
-
-      expect(res.status).toBe(200)
-      expect(res.body).toEqual([])
-   })
-
-   it('returns all bookmarks ordered by newest first', async () => {
-      seedBookmark('https://a.com', 'A')
-      seedBookmark('https://b.com', 'B')
-
-      const res = await request(app).get('/bookmarks')
-
-      expect(res.status).toBe(200)
-      expect(res.body).toHaveLength(2)
-      expect(res.body[0].url).toBe('https://b.com')
-      expect(res.body[1].url).toBe('https://a.com')
-   })
-})
-
 describe('GET /bookmarks/:id', () => {
    it('returns a bookmark with its tags', async () => {
       const created = seedBookmark('https://example.com', 'Example')
@@ -382,6 +361,22 @@ describe('DELETE /bookmarks/:id', () => {
       const res = await request(app).delete('/bookmarks/9999')
 
       expect(res.status).toBe(404)
+   })
+})
+
+describe('health endpoints', () => {
+   it('GET /healthz returns 200 with status ok', async () => {
+      const res = await request(app).get('/healthz')
+
+      expect(res.status).toBe(200)
+      expect(res.body).toEqual({ status: 'ok' })
+   })
+
+   it('GET /readyz returns 200 when the database is reachable', async () => {
+      const res = await request(app).get('/readyz')
+
+      expect(res.status).toBe(200)
+      expect(res.body).toEqual({ status: 'ready' })
    })
 })
 
