@@ -76,8 +76,8 @@ Three parallel tracks. Each step builds on the previous one and folds in one new
 - [x] **Step 9** — CORS configured for the frontend origin
 - [x] **Step 10** — Env config validated by Zod (`config.ts`), fail-fast on bad env
 - [x] **Step 11** — Vitest + Supertest test harness (`app.ts` extracted from `index.ts` for testability, in-memory SQLite for tests)
-- [ ] **Step 12** — Structured logging with `pino` (+ `pino-http`) ← **next**
-- [ ] **Step 13** — Request IDs / correlation IDs threaded through logs
+- [x] **Step 12** — Structured logging with `pino` (+ `pino-http`)
+- [ ] **Step 13** — Request IDs / correlation IDs threaded through logs ← **next**
 - [ ] **Step 14** — Security headers (`helmet`) + body-size limit
 - [ ] **Step 15** — Rate limiting (`express-rate-limit`)
 - [ ] **Step 16** — Health & readiness endpoints (`/healthz`, `/readyz`)

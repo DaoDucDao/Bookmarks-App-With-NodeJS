@@ -1,12 +1,15 @@
 import express from 'express'
 import cors from 'cors'
+import { pinoHttp } from 'pino-http'
 import { config } from './config.js'
+import { logger } from './lib/logger.js'
 import { bookmarksRouter } from './routes/bookmarks.js'
 import { notFoundHandler } from './middleware/not-found.js'
 import { errorHandler } from './middleware/error-handler.js'
 
 const app = express()
 
+app.use(pinoHttp({ logger }))
 app.use(cors({ origin: config.CORS_ORIGIN }))
 app.use(express.json())
 

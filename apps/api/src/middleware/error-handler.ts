@@ -13,6 +13,6 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
     return
   }
 
-  console.error(`[${req.method} ${req.path}] unhandled error:`, err)
+  req.log.error({ err }, 'unhandled error')
   res.status(500).json({ error: 'internal server error' })
 }
