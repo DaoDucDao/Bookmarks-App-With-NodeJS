@@ -1,3 +1,5 @@
+import { apiFetch } from './client'
+
 type Tag = {
    id: number;
    name: string;
@@ -31,94 +33,65 @@ type FilterBookmarkParams = {
    tags?: string[];
 };
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:2607';
-
 const fetchTags = async (): Promise<Tag[]> => {
-   const res = await fetch(`${API_URL}/bookmarks/tags`);
-
-   if (!res.ok) throw new Error(`request failed with status ${res.status}`);
-
-   return res.json();
-};
+   const res = await apiFetch('/bookmarks/tags')
+   return res.json()
+}
 
 const createBookmark = async (input: BookmarkInput): Promise<Bookmark> => {
-   const res = await fetch(`${API_URL}/bookmarks`, {
+   const res = await apiFetch('/bookmarks', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
-   });
-
-   if (!res.ok) throw new Error(`request failed with status ${res.status}`);
-
-   return res.json();
-};
+   })
+   return res.json()
+}
 
 const updateBookmark = async (id: number, input: BookmarkInput): Promise<Bookmark> => {
-   const res = await fetch(`${API_URL}/bookmarks/${id}`, {
+   const res = await apiFetch(`/bookmarks/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
-   });
-
-   if (!res.ok) throw new Error(`request failed with status ${res.status}`);
-
-   return res.json();
-};
+   })
+   return res.json()
+}
 
 const deleteBookmark = async (id: number): Promise<void> => {
-   const res = await fetch(`${API_URL}/bookmarks/${id}`, { method: 'DELETE' });
-
-   if (!res.ok) throw new Error(`request failed with status ${res.status}`);
-};
+   await apiFetch(`/bookmarks/${id}`, { method: 'DELETE' })
+}
 
 const setFavourite = async (id: number, is_favorite: 0 | 1): Promise<Bookmark> => {
-   const res = await fetch(`${API_URL}/bookmarks/toggle-favourite/${id}`, {
+   const res = await apiFetch(`/bookmarks/toggle-favourite/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_favorite }),
-   });
-
-   if (!res.ok) throw new Error(`request failed with status ${res.status}`);
-
-   return res.json();
-};
+   })
+   return res.json()
+}
 
 const addTagToBookmark = async (id: number, name: string): Promise<Bookmark> => {
-   const res = await fetch(`${API_URL}/bookmarks/${id}/tags`, {
+   const res = await apiFetch(`/bookmarks/${id}/tags`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
-   });
-
-   if (!res.ok) throw new Error(`request failed with status ${res.status}`);
-
-   return res.json();
-};
+   })
+   return res.json()
+}
 
 const removeTagFromBookmark = async (id: number, tagId: number): Promise<void> => {
-   const res = await fetch(`${API_URL}/bookmarks/${id}/tags/${tagId}`, { method: 'DELETE' });
-
-   if (!res.ok) throw new Error(`request failed with status ${res.status}`);
-};
+   await apiFetch(`/bookmarks/${id}/tags/${tagId}`, { method: 'DELETE' })
+}
 
 const filterBookmark = async (
    params: FilterBookmarkParams = {},
 ): Promise<FilterBookmarksResponse> => {
-   const url = new URL(`${API_URL}/bookmarks/filter`);
+   const search = new URLSearchParams()
 
-   if (params.title) url.searchParams.set('title', params.title);
-   if (params.tags) {
-      for (const t of params.tags) url.searchParams.append('tag', t);
-   }
-   if (params.page) url.searchParams.set('page', String(params.page));
-   if (params.limit) url.searchParams.set('limit', String(params.limit));
+   if (params.title) search.set('title', params.title)
+   if (params.tags) for (const t of params.tags) search.append('tag', t)
+   if (params.page) search.set('page', String(params.page))
+   if (params.limit) search.set('limit', String(params.limit))
 
-   const res = await fetch(url, { method: 'GET' });
-
-   if (!res.ok) throw new Error(`Request failed with status  ${res.status}`);
-
-   return res.json();
-};
+   const query = search.toString()
+   const res = await apiFetch(`/bookmarks/filter${query ? `?${query}` : ''}`)
+   return res.json()
+}
 
 export {
    fetchTags,

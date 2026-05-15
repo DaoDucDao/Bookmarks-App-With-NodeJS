@@ -39,6 +39,7 @@ bookmarksRouter.get('/tags', (_req, res) => {
 });
 
 bookmarksRouter.get('/filter', (req, res) => {
+   const userId = req.session.userId;
    const { title, limit, page, tag } = querySchema.parse(req.query);
 
    const findPattern = title ? `%${title}%` : '%';
@@ -56,7 +57,7 @@ bookmarksRouter.get('/filter', (req, res) => {
          : '';
 
    const tagFilterParams = tags.length > 0 ? [...tags, tags.length] : [];
-   const filterParams = [findPattern, ...tagFilterParams, limit, (page - 1) * limit];
+   const filterParams = [findPattern, userId, ...tagFilterParams, limit, (page - 1) * limit];
 
    const result = db
       .prepare(
@@ -71,7 +72,7 @@ bookmarksRouter.get('/filter', (req, res) => {
          FROM bookmarks b
          LEFT JOIN bookmark_tags bt ON bt.bookmark_id = b.id
          LEFT JOIN tags t ON t.id = bt.tag_id
-         WHERE b.title LIKE ? COLLATE NOCASE
+         WHERE b.title LIKE ? COLLATE NOCASE AND user_id = ?
          ${tagFilter}
          GROUP BY b.id
          ORDER BY b.created_at DESC, b.id DESC
@@ -83,10 +84,10 @@ bookmarksRouter.get('/filter', (req, res) => {
    const { total } = db
       .prepare(
          `SELECT COUNT(*) AS total FROM bookmarks b
-         WHERE b.title LIKE ? COLLATE NOCASE
+         WHERE b.title LIKE ? COLLATE NOCASE AND user_id = ?
          ${tagFilter}`,
       )
-      .get(findPattern, ...tagFilterParams) as { total: number };
+      .get(findPattern, userId, ...tagFilterParams) as { total: number };
 
    res.json({
       items: result.map((item) => ({ ...item, tags: JSON.parse(item.tags) })),
@@ -99,10 +100,11 @@ bookmarksRouter.get('/filter', (req, res) => {
 bookmarksRouter.patch('/toggle-favourite/:id', (req, res) => {
    const id = idParamSchema.parse(req.params.id);
    const { is_favorite } = favouriteBodySchema.parse(req.body);
+   const userId = req.session.userId;
 
    const updated = db
-      .prepare('UPDATE bookmarks SET is_favorite = ? WHERE id = ? RETURNING *')
-      .get(is_favorite, id) as Bookmark | undefined;
+      .prepare('UPDATE bookmarks SET is_favorite = ? WHERE id = ? AND user_id = ? RETURNING *')
+      .get(is_favorite, id, userId) as Bookmark | undefined;
 
    if (!updated) throw new HttpError(404, 'Bookmark not found!');
 
@@ -112,10 +114,11 @@ bookmarksRouter.patch('/toggle-favourite/:id', (req, res) => {
 bookmarksRouter.post('/:id/tags', (req, res) => {
    const id = idParamSchema.parse(req.params.id);
    const { name } = tagSchema.parse(req.body);
+   const userId = req.session.userId;
 
-   const existBookmark = db.prepare('SELECT id FROM bookmarks WHERE id = ?').get(id) as
-      | { id: number }
-      | undefined;
+   const existBookmark = db
+      .prepare('SELECT id FROM bookmarks WHERE id = ? AND user_id =?')
+      .get(id, userId) as { id: number } | undefined;
    if (!existBookmark) throw new HttpError(404, 'Bookmark not Found!');
 
    db.prepare('INSERT OR IGNORE INTO tags (name) VALUES (?)').run(name);
@@ -140,17 +143,18 @@ bookmarksRouter.post('/:id/tags', (req, res) => {
          FROM bookmarks b
          LEFT JOIN bookmark_tags bt ON bt.bookmark_id = b.id
          LEFT JOIN tags t ON t.id = bt.tag_id
-         WHERE b.id = ?
+         WHERE b.id = ? AND user_id = ?
          GROUP BY b.id 
       `,
       )
-      .get(id) as Omit<Bookmark, 'tags'> & { tags: string };
+      .get(id, userId) as Omit<Bookmark, 'tags'> & { tags: string };
 
    res.status(201).json({ ...result, tags: JSON.parse(result.tags) });
 });
 
 bookmarksRouter.get('/:id', (req, res) => {
    const id = idParamSchema.parse(req.params.id);
+   const userId = req.session.userId;
 
    const bookmark = db
       .prepare(
@@ -165,11 +169,11 @@ bookmarksRouter.get('/:id', (req, res) => {
          FROM bookmarks b
          LEFT JOIN bookmark_tags bt ON bt.bookmark_id = b.id
          LEFT JOIN tags t ON t.id = bt.tag_id
-         WHERE b.id = ? 
+         WHERE b.id = ? AND user_id =?
          GROUP BY b.id 
       `,
       )
-      .get(id) as (Omit<Bookmark, 'tags'> & { tags: string }) | undefined;
+      .get(id, userId) as (Omit<Bookmark, 'tags'> & { tags: string }) | undefined;
 
    if (!bookmark) {
       throw new HttpError(404, 'bookmark not found');
@@ -180,10 +184,11 @@ bookmarksRouter.get('/:id', (req, res) => {
 
 bookmarksRouter.post('/', (req, res) => {
    const { url, title } = createBookmarkSchema.parse(req.body);
+   const userId = req.session.userId;
 
    const inserted = db
-      .prepare('INSERT INTO bookmarks (url, title) VALUES (?, ?) RETURNING *')
-      .get(url, title ?? null) as Bookmark;
+      .prepare('INSERT INTO bookmarks (url, title, user_id) VALUES (?, ?, ?) RETURNING * ')
+      .get(url, title ?? null, userId) as Bookmark;
 
    res.status(201).json(inserted);
 });
@@ -191,10 +196,11 @@ bookmarksRouter.post('/', (req, res) => {
 bookmarksRouter.put('/:id', (req, res) => {
    const id = idParamSchema.parse(req.params.id);
    const { url, title } = updateBookmarkSchema.parse(req.body);
+   const userId = req.session.userId;
 
    const updated = db
-      .prepare('UPDATE bookmarks SET url = ?, title = ? WHERE id = ? RETURNING *')
-      .get(url, title ?? null, id) as Bookmark | undefined;
+      .prepare('UPDATE bookmarks SET url = ?, title = ? WHERE id = ? AND user_id = ? RETURNING *')
+      .get(url, title ?? null, id, userId) as Bookmark | undefined;
 
    if (!updated) {
       throw new HttpError(404, 'bookmark not found');
@@ -206,10 +212,13 @@ bookmarksRouter.put('/:id', (req, res) => {
 bookmarksRouter.delete('/:id/tags/:tagId', (req, res) => {
    const bookmarkId = idParamSchema.parse(req.params.id);
    const tagId = idParamSchema.parse(req.params.tagId);
+   const userId = req.session.userId;
 
    const result = db
-      .prepare('DELETE FROM bookmark_tags WHERE bookmark_id = ? and tag_id = ?')
-      .run(bookmarkId, tagId);
+      .prepare(
+         'DELETE FROM bookmark_tags WHERE bookmark_id = ? AND tag_id = ? AND bookmark_id IN (SELECT id FROM bookmarks WHERE user_id = ?)',
+      )
+      .run(bookmarkId, tagId, userId);
 
    if (result.changes === 0) throw new HttpError(404, 'No matched tag or bookmark');
 
@@ -218,8 +227,9 @@ bookmarksRouter.delete('/:id/tags/:tagId', (req, res) => {
 
 bookmarksRouter.delete('/:id', (req, res) => {
    const id = idParamSchema.parse(req.params.id);
+   const userId = req.session.userId;
 
-   const result = db.prepare('DELETE FROM bookmarks WHERE id = ?').run(id);
+   const result = db.prepare('DELETE FROM bookmarks WHERE id = ? AND user_id = ?').run(id, userId);
 
    if (result.changes === 0) {
       throw new HttpError(404, 'bookmark not found');

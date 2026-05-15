@@ -83,7 +83,7 @@ Three parallel tracks. Each step builds on the previous one and folds in one new
 - [x] **Step 16** — Health & readiness endpoints (`/healthz`, `/readyz`)
 - [x] **Step 17** — Graceful shutdown (SIGTERM, drain connections, close DB)
 - [x] **Step 18** — Database migrations (replace `CREATE TABLE IF NOT EXISTS` bootstrap)
-- [ ] **Step 19** — Authentication (sessions or JWT) + per-user bookmarks ← **next**
+- [x] **Step 19** — Authentication (sessions or JWT) + per-user bookmarks
 
 ### Frontend track
 
