@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { ApiIssue } from '../api/client'
 
 const bookmarkSchema = z.object({
    url: z
@@ -14,29 +15,25 @@ const bookmarkSchema = z.object({
       .optional(),
 })
 
-type FieldErrors = {
-   url?: string
-   title?: string
-}
+type BookmarkFormField = 'url' | 'title'
 
-const validateBookmark = (input: { url: string; title: string }): { success: true; data: { url: string; title?: string } } | { success: false; errors: FieldErrors } => {
-   const titleTrimmed = input.title.trim()
-   const candidate = { url: input.url, title: titleTrimmed === '' ? undefined : titleTrimmed }
-   const result = bookmarkSchema.safeParse(candidate)
+const applyApiIssuesToForm = (
+   issues: ApiIssue[] | undefined,
+   setError: (field: BookmarkFormField, error: { message: string }) => void,
+): boolean => {
+   if (!issues) return false
+   const seen = new Set<BookmarkFormField>()
 
-   if (result.success) return { success: true, data: result.data }
-
-   const errors: FieldErrors = {}
-
-   for (const issue of result.error.issues) {
+   for (const issue of issues) {
       const field = issue.path[0]
-
-      if (field === 'url' && !errors.url) errors.url = issue.message
-      if (field === 'title' && !errors.title) errors.title = issue.message
+      if ((field === 'url' || field === 'title') && !seen.has(field)) {
+         setError(field, { message: issue.message })
+         seen.add(field)
+      }
    }
 
-   return { success: false, errors }
+   return seen.size > 0
 }
 
-export { bookmarkSchema, validateBookmark }
-export type { FieldErrors }
+export { bookmarkSchema, applyApiIssuesToForm }
+export type { BookmarkFormField }

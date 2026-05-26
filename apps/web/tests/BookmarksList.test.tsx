@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import BookmarksList from '../src/Components/BookmarksList'
 import * as api from '../src/api/bookmarks'
 import type { Bookmark } from '../src/api/bookmarks'
+import { ApiError } from '../src/api/client'
 
 vi.mock('../src/api/bookmarks')
 
@@ -117,6 +118,28 @@ describe('BookmarksList', () => {
 
       expect(await screen.findByText('Please enter a valid URL')).toBeInTheDocument()
       expect(api.createBookmark).not.toHaveBeenCalled()
+   })
+
+   it('surfaces backend validation issues under the matching field', async () => {
+      const user = userEvent.setup()
+
+      vi.mocked(api.filterBookmark).mockResolvedValue(makeResponse([]))
+      vi.mocked(api.createBookmark).mockRejectedValue(
+         new ApiError(400, 'invalid input', [
+            { path: ['url'], message: 'URL must be https' },
+         ]),
+      )
+
+      render(<BookmarksList />)
+
+      await screen.findByText('No bookmarks yet.')
+
+      // A value that passes client-side validation but fails server-side.
+      await user.type(screen.getByPlaceholderText('https://example.com'), 'http://example.com')
+      await user.click(screen.getByRole('button', { name: 'Add bookmark' }))
+
+      expect(await screen.findByText('URL must be https')).toBeInTheDocument()
+      expect(api.createBookmark).toHaveBeenCalled()
    })
 
    it('removes a bookmark when its delete button is clicked', async () => {

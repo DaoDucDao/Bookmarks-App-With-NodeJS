@@ -1,11 +1,15 @@
 import React, { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import type { z } from 'zod'
 import {
    updateBookmark,
    addTagToBookmark,
    removeTagFromBookmark,
    type Bookmark,
 } from '../../api/bookmarks'
-import { validateBookmark, type FieldErrors } from '../../validation/bookmark'
+import { ApiError } from '../../api/client'
+import { bookmarkSchema, applyApiIssuesToForm } from '../../validation/bookmark'
 
 type Props = {
    bookmark: Bookmark
@@ -13,6 +17,8 @@ type Props = {
    loadTags: () => Promise<void>
    setEditing: (editing: boolean) => void
 }
+
+type FormValues = z.infer<typeof bookmarkSchema>
 
 const inputBaseClass =
    'rounded-md border bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 disabled:bg-slate-100 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:disabled:bg-slate-800'
@@ -37,11 +43,23 @@ const addTagButtonClass =
    'cursor-pointer rounded-md border border-blue-300 px-2 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-900/60 dark:text-blue-400 dark:hover:bg-blue-950/40'
 
 const BookmarkRowEditForm = ({ bookmark, loadBookmarks, loadTags, setEditing }: Props) => {
-   const [url, setUrl] = useState(bookmark.url)
-   const [title, setTitle] = useState(bookmark.title ?? '')
-   const [submitting, setSubmitting] = useState(false)
+   const urlInputId = `bookmark-${bookmark.id}-url`
+   const titleInputId = `bookmark-${bookmark.id}-title`
+   const tagInputId = `bookmark-${bookmark.id}-tag`
+   const urlErrorId = `bookmark-${bookmark.id}-url-error`
+   const titleErrorId = `bookmark-${bookmark.id}-title-error`
+
+   const {
+      register,
+      handleSubmit,
+      formState: { errors, isSubmitting },
+      setError,
+   } = useForm<FormValues>({
+      resolver: zodResolver(bookmarkSchema),
+      defaultValues: { url: bookmark.url, title: bookmark.title ?? '' },
+   })
+
    const [submitError, setSubmitError] = useState<string | null>(null)
-   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
 
    const [tagInput, setTagInput] = useState('')
    const [tagBusy, setTagBusy] = useState(false)
@@ -49,42 +67,22 @@ const BookmarkRowEditForm = ({ bookmark, loadBookmarks, loadTags, setEditing }: 
 
    const cancelEdit = () => setEditing(false)
 
-   const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault()
-
-      const result = validateBookmark({ url, title })
-
-      if (!result.success) {
-         setFieldErrors(result.errors)
-
-         return
-      }
-
-      setFieldErrors({})
-      setSubmitting(true)
+   const onSubmit = handleSubmit(async (values) => {
       setSubmitError(null)
 
+      const payload = { url: values.url, title: values.title || undefined }
+
       try {
-         await updateBookmark(bookmark.id, result.data)
+         await updateBookmark(bookmark.id, payload)
          setEditing(false)
          await loadBookmarks()
       } catch (error) {
-         console.log(error)
-         setSubmitError('Failed to save')
-      } finally {
-         setSubmitting(false)
+         if (error instanceof ApiError && applyApiIssuesToForm(error.issues, setError)) {
+            return
+         }
+         setSubmitError(error instanceof ApiError ? error.message : 'Failed to save')
       }
-   }
-
-   const handleUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      setUrl(event.target.value)
-      if (fieldErrors.url) setFieldErrors((prev) => ({ ...prev, url: undefined }))
-   }
-
-   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      setTitle(event.target.value)
-      if (fieldErrors.title) setFieldErrors((prev) => ({ ...prev, title: undefined }))
-   }
+   })
 
    const handleAddTag = async () => {
       const trimmed = tagInput.trim()
@@ -129,32 +127,48 @@ const BookmarkRowEditForm = ({ bookmark, loadBookmarks, loadTags, setEditing }: 
 
    return (
       <li className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-         <form onSubmit={handleSave} noValidate className="grid gap-2">
+         <form onSubmit={onSubmit} noValidate className="grid gap-2">
             <div className="grid gap-1">
+               <label htmlFor={urlInputId} className="sr-only">
+                  Bookmark URL
+               </label>
                <input
+                  id={urlInputId}
                   type="url"
-                  value={url}
-                  onChange={handleUrlChange}
-                  disabled={submitting}
-                  aria-invalid={Boolean(fieldErrors.url)}
-                  className={inputClass(Boolean(fieldErrors.url))}
+                  disabled={isSubmitting}
+                  aria-invalid={Boolean(errors.url)}
+                  aria-describedby={errors.url ? urlErrorId : undefined}
+                  className={inputClass(Boolean(errors.url))}
+                  {...register('url')}
                />
 
-               {fieldErrors.url && <p className="text-xs text-red-600 dark:text-red-400">{fieldErrors.url}</p>}
+               {errors.url && (
+                  <p id={urlErrorId} role="alert" className="text-xs text-red-600 dark:text-red-400">
+                     {errors.url.message}
+                  </p>
+               )}
             </div>
 
             <div className="grid gap-1">
+               <label htmlFor={titleInputId} className="sr-only">
+                  Bookmark title (optional)
+               </label>
                <input
+                  id={titleInputId}
                   type="text"
                   placeholder="Title (optional)"
-                  value={title}
-                  onChange={handleTitleChange}
-                  disabled={submitting}
-                  aria-invalid={Boolean(fieldErrors.title)}
-                  className={inputClass(Boolean(fieldErrors.title))}
+                  disabled={isSubmitting}
+                  aria-invalid={Boolean(errors.title)}
+                  aria-describedby={errors.title ? titleErrorId : undefined}
+                  className={inputClass(Boolean(errors.title))}
+                  {...register('title')}
                />
 
-               {fieldErrors.title && <p className="text-xs text-red-600 dark:text-red-400">{fieldErrors.title}</p>}
+               {errors.title && (
+                  <p id={titleErrorId} role="alert" className="text-xs text-red-600 dark:text-red-400">
+                     {errors.title.message}
+                  </p>
+               )}
             </div>
 
             <div className="grid gap-1">
@@ -176,7 +190,11 @@ const BookmarkRowEditForm = ({ bookmark, loadBookmarks, loadTags, setEditing }: 
                      </span>
                   ))}
 
+                  <label htmlFor={tagInputId} className="sr-only">
+                     Add a tag
+                  </label>
                   <input
+                     id={tagInputId}
                      type="text"
                      placeholder="Add a tag…"
                      value={tagInput}
@@ -196,29 +214,37 @@ const BookmarkRowEditForm = ({ bookmark, loadBookmarks, loadTags, setEditing }: 
                   </button>
                </div>
 
-               {tagError && <p className="text-xs text-red-600 dark:text-red-400">{tagError}</p>}
+               {tagError && (
+                  <p role="alert" className="text-xs text-red-600 dark:text-red-400">
+                     {tagError}
+                  </p>
+               )}
             </div>
 
             <div className="flex gap-2">
                <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={isSubmitting}
                   className="cursor-pointer rounded-md bg-blue-600 px-3 py-1 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 dark:disabled:bg-slate-700"
                >
-                  {submitting ? 'Saving…' : 'Save'}
+                  {isSubmitting ? 'Saving…' : 'Save'}
                </button>
 
                <button
                   type="button"
                   onClick={cancelEdit}
-                  disabled={submitting}
+                  disabled={isSubmitting}
                   className={cancelButtonClass}
                >
                   Cancel
                </button>
             </div>
 
-            {submitError && <p className="m-0 text-sm text-red-600 dark:text-red-400">{submitError}</p>}
+            {submitError && (
+               <p role="alert" className="m-0 text-sm text-red-600 dark:text-red-400">
+                  {submitError}
+               </p>
+            )}
          </form>
       </li>
    )

@@ -20,14 +20,14 @@ const tagChipClass =
    'rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300'
 
 const rowBaseClass =
-   'group flex items-center justify-between gap-3 rounded-lg border p-3 shadow-sm transition-shadow hover:shadow-md'
+   'group flex animate-row-in items-center justify-between gap-3 rounded-lg border p-3 shadow-sm transition-shadow hover:shadow-md'
 
 const rowNormalClass = 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'
 
 const rowFavouriteClass = 'border-blue-300 bg-blue-200 dark:border-blue-700/60 dark:bg-blue-950/30'
 
-const rowClass = (isFavourite: boolean) =>
-   `${rowBaseClass} ${isFavourite ? rowFavouriteClass : rowNormalClass}`
+const rowClass = (isFavourite: boolean, leaving: boolean) =>
+   `${rowBaseClass} ${isFavourite ? rowFavouriteClass : rowNormalClass} ${leaving ? 'pointer-events-none animate-row-out' : ''}`
 
 const BookmarkRowDisplay = ({ bookmark, loadBookmarks, setEditing }: Props) => {
    const [deleting, setDeleting] = useState(false)
@@ -54,9 +54,14 @@ const BookmarkRowDisplay = ({ bookmark, loadBookmarks, setEditing }: Props) => {
    const handleDelete = async () => {
       setDeleting(true)
 
+      // Let the fade-out animation play before the row unmounts.
+      await new Promise((resolve) => setTimeout(resolve, 180))
+
       try {
          await deleteBookmark(bookmark.id)
          await loadBookmarks()
+         // Move keyboard focus to the form so it doesn't fall to <body>.
+         document.getElementById('bookmark-form-url')?.focus()
       } catch (error) {
          console.log(error)
          setError('Failed to delete')
@@ -65,7 +70,7 @@ const BookmarkRowDisplay = ({ bookmark, loadBookmarks, setEditing }: Props) => {
    }
 
    return (
-      <li className={rowClass(Boolean(bookmark.is_favorite))}>
+      <li className={rowClass(Boolean(bookmark.is_favorite), deleting)}>
          <a
             href={bookmark.url}
             target="_blank"

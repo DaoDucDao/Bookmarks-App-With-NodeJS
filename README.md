@@ -96,10 +96,10 @@ Three parallel tracks. Each step builds on the previous one and folds in one new
 - [x] **Step 7** — Tailwind v4 styling (class-based, no `tailwind.config.js`)
 - [x] **Step 8** — Dark mode toggle (`useTheme` hook, system preference + `localStorage`, `@custom-variant`)
 - [x] **Step 9** — Client-side Zod validation with per-field errors and clear-on-edit UX
-- [ ] **Step 10** — Surface backend validation errors per field (read API's Zod issues) ← **next**
-- [ ] **Step 11** — Skeleton + transition polish, accessibility audit pass
-- [ ] **Step 12** — `react-hook-form` + `@hookform/resolvers/zod` to replace manual form state
-- [ ] **Step 13** — Optimistic updates (mutate local state first, roll back on failure)
+- [x] **Step 10** — Surface backend validation errors per field (read API's Zod issues)
+- [x] **Step 11** — Skeleton + transition polish, accessibility audit pass
+- [x] **Step 12** — `react-hook-form` + `@hookform/resolvers/zod` to replace manual form state
+- [ ] **Step 13** — Optimistic updates (mutate local state first, roll back on failure) ← **next**
 - [ ] **Step 14** — Error boundaries + retry UX
 - [ ] **Step 15** — Client-side routing (react-router or tanstack-router)
 - [ ] **Step 16** — Authentication UI (login/register, protected routes, token storage)

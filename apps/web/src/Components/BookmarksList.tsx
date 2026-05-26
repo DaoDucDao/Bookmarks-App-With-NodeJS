@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchTags, filterBookmark, type Bookmark, type Tag } from '../api/bookmarks';
 import BookmarkForm from './BookmarkForm';
 import BookmarkRow from './BookmarkRow';
+import BookmarkRowSkeleton from './BookmarkRowSkeleton';
 import SearchBar from './SearchBar';
 import Pagination from './Pagination';
 
@@ -67,13 +68,17 @@ const BookmarksList = () => {
 
    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+   const liveRegionMessage = (() => {
+      if (loading) return '';
+      if (error) return 'Error loading bookmarks.';
+      if (total === 0) return search ? 'No matching results.' : 'Bookmark list is empty.';
+      return `Loaded ${total} bookmark${total === 1 ? '' : 's'}.`;
+   })();
+
    const renderSkeleton = () => (
       <ul role="status" aria-label="Loading bookmarks" className="grid list-none gap-2 p-0">
          {[1, 2, 3].map((key) => (
-            <li
-               key={key}
-               className="h-12 animate-pulse rounded-lg border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-800/60"
-            />
+            <BookmarkRowSkeleton key={key} />
          ))}
       </ul>
    );
@@ -173,6 +178,10 @@ const BookmarksList = () => {
                </button>
             </div>
          )}
+
+         <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+            {liveRegionMessage}
+         </div>
 
          {renderList()}
 
