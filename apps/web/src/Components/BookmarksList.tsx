@@ -5,6 +5,7 @@ import BookmarkRow from './BookmarkRow';
 import BookmarkRowSkeleton from './BookmarkRowSkeleton';
 import SearchBar from './SearchBar';
 import Pagination from './Pagination';
+import StatsBar from './StatsBar';
 
 const PAGE_SIZE = 10;
 
@@ -130,6 +131,8 @@ const BookmarksList = () => {
 
    return (
       <React.Fragment>
+         <StatsBar total={total} tagCount={tags.length} />
+
          <BookmarkForm loadBookmarks={loadBookmarks} />
 
          <SearchBar value={search} setValue={handleSearchChange} disabled={loading} />
